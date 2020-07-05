@@ -1,0 +1,26 @@
+#!ipxe
+###
+### {{ site_name }} Other
+###
+
+:custom
+clear custom_choice
+menu Custom Gilman Lab Images
+item --gap vSphere ESXi
+item option_one ${space} ESXi 7.0 UEFI
+item option_two ${space} ESXi 7.0 BIOS
+choose custom_choice || goto custom_exit
+echo ${cls}
+goto ${custom_choice}
+goto custom_exit
+
+:option_one
+kernel https://pxe.gilman.io/iso/esxi700/efi/boot/bootx64.efi -c https://pxe.gilman.io/iso/esxi700/efi/boot/boot.cfg
+boot || goto custom_exit
+
+:option_two
+kernel https://pxe.gilman.io/iso/esxi700/mboot.c32 -c https://pxe.gilman.io/iso/esxi700/boot.cfg
+boot || goto custom_exit
+
+:custom_exit
+exit
