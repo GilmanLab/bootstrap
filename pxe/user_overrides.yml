@@ -6,10 +6,10 @@ generate_disks: true
 generate_checksums: true
 
 # set desired site name
-site_name: pxe.gilman.io
+site_name: ipxe.gilman.io
 
 # set desired boot domain
-boot_domain: pxe.gilman.io
+boot_domain: ipxe.gilman.io
 
 # set boot version
 #boot_version: "2.x"
