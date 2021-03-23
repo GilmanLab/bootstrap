@@ -6,6 +6,11 @@
             'esxi2.gilman.io',
             'esxi3.gilman.io'
         )
+        ntp   = @(
+            'time1.google.com',
+            'time2.google.com',
+            'time3.google.com'
+        )
     }
     nas     = @{
         address   = 'nas.gilman.io'
