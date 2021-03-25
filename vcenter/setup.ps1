@@ -117,3 +117,85 @@ foreach ($setting in $settings) {
     $short_name = $setting.Entity -replace '.gilman.io', ''
     $setting | Set-AdvancedSetting -Value "[Lab] logs/$short_name" -Confirm:$false
 }
+
+# Migrate networking
+$switch = Get-VDSwitch | Where-Object Name -EQ $CONFIG.vcenter.network.vdswitch.name
+foreach ($vmhost in Get-VMHost) {
+    if (!($vmhost | Get-VDSwitch)) {
+        # Refuse to migrate if the host has VM's
+        if (($vmhost | Get-VM).Count -gt 0) {
+            Write-Warning "Skipping host $($vmhost.Name) as it has VM's on it..."
+            continue
+        }
+
+        # Since this is potentially dangerous, we just ask for confirmation
+        $confirmation = Read-Host "Migrate the networking for $($vmhost.Name)? [y/n]"
+        if ($confirmation -ne 'y') {
+            continue
+        }
+
+        # Add host to switch
+        $switch | Add-VDSwitchVMHost -VMHost $vmhost
+
+        $vmnic0 = Get-VMHost $vmhost | Get-VMHostNetworkAdapter -Physical -Name vmnic0
+        $vmnic1 = Get-VMHost $vmhost | Get-VMHostNetworkAdapter -Physical -Name vmnic1
+        $vmk = Get-VMHostNetworkAdapter -Name vmk0 -VMHost $vmhost
+        $vdpg = Get-VDPortgroup -Name $CONFIG.vcenter.network.vdswitch.management_name -VDSwitch $switch
+
+        # Move first uplink
+        $switch | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmnic0 -Confirm:$false
+        Start-Sleep -Seconds 2
+
+        # Move adapter
+        Set-VMHostNetworkAdapter -PortGroup $vdpg -VirtualNic $vmk -Confirm:$false
+        Start-Sleep -Seconds 5
+
+        # Move second uplink
+        $switch | Add-VDSwitchPhysicalNetworkAdapter -VMHostNetworkAdapter $vmnic1 -Confirm:$false
+    }
+}
+
+# Add storage VMK's
+foreach ($vmk in $CONFIG.vcenter.network.vmk.storage) {
+    $vmhost = Get-VMHost | Where-Object Name -EQ $vmk.host
+
+    # Skip hosts not added to the VD Switch
+    if (!($vmhost | Get-VDSwitch)) {
+        continue
+    }
+    
+    if (!(($vmhost | Get-VMHostNetworkAdapter | Select-Object -ExpandProperty IP) -contains $vmk.address)) {
+        # Create VMKernel
+        $vmhost | New-VMHostNetworkAdapter -PortGroup $vmk.port_group -VirtualSwitch $switch -IP $vmk.address -SubnetMask $vmk.subnet -VsanTrafficEnabled $True -VMotionEnabled $True
+        Start-Sleep -Seconds 5
+
+        # Override gateway
+        $netMgr = Get-View ($vmhost | Get-View).ConfigManager.NetworkSystem
+        $iproute = New-Object VMware.Vim.HostIpRouteConfig
+        $iproute.defaultGateway = $vmk.gateway
+        $netMgr.UpdateIpRouteConfig($iproute)
+    }
+}
+
+# Configure iSCSI
+foreach ($vmhost in Get-VMHost) {
+    if (!($vmhost | Get-VMHostStorage | Select-Object -ExpandProperty SoftwareIScsiEnabled)) {
+        # Enable software adapter
+        $vmhost | Get-VMHostStorage | Set-VMHostStorage -SoftwareIScsiEnabled $True
+        Start-Sleep -Seconds 5
+
+        # Add target
+        $adapter = $vmhost | Get-VMHostHba -Type iScsi | Where-Object Model -EQ 'iSCSI Software Adapter'
+        $adapter | New-IScsiHbaTarget -Address $CONFIG.nas.address -IScsiName $CONFIG.nas.iscsi -Type Static
+
+        # Rescan HBA's
+        $vmhost | Get-VMHostStorage -RescanAllHba
+    }
+}
+
+# Create iSCSI datastore
+if (!(Get-Datastore | Where-Object Name -EQ $CONFIG.vcenter.iscsi.name)) {
+    $iscsi_host = Get-VMHost | Where-Object Name -EQ $CONFIG.vcenter.iscsi.host
+    $device = $iscsi_host | Get-ScsiLun | Where-Object Model -EQ 'iSCSI Storage'
+    $iscsi_host | New-Datastore -Name $CONFIG.vcenter.iscsi.name -Path ($device | Select-Object -ExpandProperty CanonicalName)
+}
