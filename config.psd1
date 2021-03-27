@@ -24,6 +24,10 @@
     vcenter = @{
         server     = 'vcenter.gilman.io'
         datacenter = 'Gilman'
+        cluster    = @{
+            name = 'Lab'
+            evc  = 'intel-haswell'
+        }
         datastores = @(
             @{
                 name    = 'Lab'

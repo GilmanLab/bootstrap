@@ -199,3 +199,8 @@ if (!(Get-Datastore | Where-Object Name -EQ $CONFIG.vcenter.iscsi.name)) {
     $device = $iscsi_host | Get-ScsiLun | Where-Object Model -EQ 'iSCSI Storage'
     $iscsi_host | New-Datastore -Name $CONFIG.vcenter.iscsi.name -Path ($device | Select-Object -ExpandProperty CanonicalName)
 }
+
+# Create cluster
+if (!(Get-Cluster | Where-Object Name -EQ $CONFIG.vcenter.cluster.name)) {
+    $dc | New-Cluster -Name $CONFIG.vcenter.cluster.name -EVCMode $CONFIG.vcenter.cluster.evc
+}
