@@ -1,4 +1,18 @@
 @{
+    assets      = @(
+        @{
+            name = 'bootstrap.ps1'
+            type = 'text/plain'
+        }
+        @{
+            name = 'nuget.exe'
+            type = 'application/octet-stream'
+        }
+        @{
+            name = 'provider.zip'
+            type = 'application/zip'
+        }
+    )
     choco       = @{
         package_name = 'chocolatey'
         url          = 'https://www.nuget.org/api/v2/package/chocolatey/0.10.14'
@@ -13,28 +27,28 @@
         name = 'Posh-ProGet'
     }
     proget      = @{
-        server     = 'http://proget.gilman.io'
+        server     = 'http://test.gilman.io:8624'
         port       = '8624'
         file_name  = 'proget.zip'
         executable = 'hub.exe'
         feeds      = @{
             bootstrap  = @{ 
-                name        = 'bootstrap'
-                feedType    = 'asset'
-                description = 'Chocolatey bootstrap files'
-                active      = $true
+                Name        = 'bootstrap'
+                FeedType    = 'asset'
+                Description = 'Chocolatey bootstrap files'
+                Active      = $true
             }
             chocolatey = @{
-                name        = 'internal-chocolatey'
-                feedType    = 'chocolatey'
-                description = 'Internal Chocolatey feed for hosting programs'
-                active      = $true
+                Name        = 'internal-chocolatey'
+                FeedType    = 'chocolatey'
+                Description = 'Internal Chocolatey feed for hosting programs'
+                Active      = $true
             }
             powershell = @{
-                name        = 'internal-powershell'
-                feedType    = 'powershell'
-                description = 'Internal Powershell feed for hosting modules'
-                active      = $true
+                Name        = 'internal-powershell'
+                FeedType    = 'powershell'
+                Description = 'Internal Powershell feed for hosting modules'
+                Active      = $true
             }
         }
         api        = @{

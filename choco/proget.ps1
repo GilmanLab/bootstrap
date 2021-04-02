@@ -1,15 +1,14 @@
 <#
 .Synopsis
-   Downloads install files from SMB share and performs a fully silent
-   installation and configuration of a ProGet server.
+   Installs and configures a ProGet server designed to be used within glab.
 .DESCRIPTION
-   This script is intended to be run by a machine deployed within glab that is
-   desired to be configured as a ProGet server. This helper script will perform
-   all of the necessary steps to fully install and configure a ProGet server
-   on the local machine. The installation files should have already been
-   uploaded to the given SMB path using the setup script. 
+   This script is intended to be run on a machine within glab that needs to be
+   configured as a ProGet server. The script takes options for installing the
+   required SQL Server and ProGet Server applications as well as doing the
+   initial configuration of the ProGet server once installed. The configuration
+   portion is idempotent and can be run several times. 
 .EXAMPLE
-   .\proget.ps1 -ConfigFile .\choco\config.psd1 -License mylicensekey
+   .\choco\proget.ps1 -ConfigFile .\choco\config.psd1 -Install ProGet -License mylicense
 .NOTES
     Name: proget.ps1
     Author: Joshua Gilman (@jmgilman)
@@ -362,41 +361,57 @@ if ($Configure) {
         Install-NuGet -FileFolder $local_file_folder -FileName $CONFIG.nuget.file_name -NuGetPath $nuget_path
     }
 
-    $base_url = 'http://localhost:' + $CONFIG.proget.port + '/'
-    $ps_repository_url = $base_url + 'nuget/' + $CONFIG.proget.feeds.powershell.name
-    $choco_repository_url = $base_url + 'nuget/' + $CONFIG.proget.feeds.chocolatey.name
-    $feeds_list_endpoint = $base_url + $CONFIG.proget.api.feeds_endpoint + 'list'
-    $feeds_create_endpoint = $base_url + $CONFIG.proget.api.feeds_endpoint + 'create'
-    $assets_endpoint = $base_url + 'endpoints/'
+    # Import Posh-Proget module
+    $posh_proget_path = Join-Path $local_file_folder ($CONFIG.posh_proget.name + '.zip')
+    Expand-Archive $posh_proget_path $local_file_folder -Force
+    Import-Module (Join-Path $local_file_folder $CONFIG.posh_proget.name)
 
     # Check for existing feeds
-    $resp = Invoke-ProGetAPI -Type 'Get' -ApiKey $ApiKey -Endpoint $feeds_list_endpoint
+    $session = New-ProGetSession $CONFIG.proget.server $ApiKey
+    $feeds = Get-ProGetFeeds $session
 
     # Powershell feed
-    if (!($resp | Where-Object name -EQ $CONFIG.proget.feeds.powershell.name)) {
-        try {
-            Invoke-ProGetApi -Type 'Post' -ApiKey $ApiKey -Endpoint $feeds_create_endpoint -Data $CONFIG.proget.feeds.powershell
-        }
-        catch {
+    if (!($feeds | Where-Object Name -EQ $CONFIG.proget.feeds.powershell.name)) {
+        $feed_obj = New-ProGetFeedObject $CONFIG.proget.feeds.powershell
+        $feed = New-ProGetFeed $session $feed_obj
+
+        if (!$feed) {
             Write-Error "Failed creating Powershell feed: $($Error[0])"
             exit
         }
     }
 
     # Chocolatey feed
-    if (!($resp | Where-Object name -EQ $CONFIG.proget.feeds.chocolatey.name)) {
-        try {
-            Invoke-ProGetApi -Type 'Post' -ApiKey $ApiKey -Endpoint $feeds_create_endpoint -Data $CONFIG.proget.feeds.chocolatey
-        }
-        catch {
+    if (!($feeds | Where-Object Name -EQ $CONFIG.proget.feeds.chocolatey.name)) {
+        $feed_obj = New-ProGetFeedObject $CONFIG.proget.feeds.chocolatey
+        $feed = New-ProGetFeed $session $feed_obj
+
+        if (!$feed) {
             Write-Error "Failed creating Chocolatey feed: $($Error[0])"
+            exit
+        }
+    }
+
+    # Assets feed
+    if (!($feeds | Where-Object Name -EQ $CONFIG.proget.feeds.bootstrap.name)) {
+        $feed_obj = New-ProGetFeedObject $CONFIG.proget.feeds.bootstrap
+        $feed = New-ProGetFeed $session $feed_obj
+
+        if (!$feed) {
+            Write-Error "Failed creating bootstrap assets feed: $($Error[0])"
             exit
         }
     }
 
     # Register Powershell feed locally
     if (!(Get-PSRepository | Where-Object Name -EQ $CONFIG.proget.feeds.powershell.name)) {
-        Register-PSRepository -Name $CONFIG.proget.feeds.powershell.name -SourceLocation $ps_repository_url -PublishLocation $ps_repository_url -InstallationPolicy Trusted 
+        $url = Get-ProGetFeedUrl $session (Get-ProGetFeed $session $CONFIG.proget.feeds.powershell.name)
+        Register-PSRepository -Name $CONFIG.proget.feeds.powershell.name -SourceLocation $url -PublishLocation $url -InstallationPolicy Trusted 
+    }
+
+    # Publish Posh-ProGet module
+    if (!(Find-Module -Name $CONFIG.posh_proget.name -Repository $CONFIG.proget.feeds.powershell.name -ErrorAction SilentlyContinue)) {
+        Publish-Module -Path (Join-Path $local_file_folder $CONFIG.posh_proget.name) -NuGetApiKey $ApiKey -Repository $CONFIG.proget.feeds.powershell.name 
     }
 
     # Install Chocolatey (locally)
@@ -405,8 +420,8 @@ if ($Configure) {
         $choco_nuget_path = Join-Path $local_file_folder $CONFIG.choco.file_name
         $choco_zip_path = Join-Path $local_file_folder 'choco.zip'
         $choco_folder = Join-Path $local_file_folder 'choco'
-        Copy-Item $choco_nuget_path $choco_zip_path
-        Expand-Archive -Path $choco_zip_path -DestinationPath $choco_folder
+        Copy-Item $choco_nuget_path $choco_zip_path -Force
+        Expand-Archive -Path $choco_zip_path -DestinationPath $choco_folder -Force
 
         # Run install file
         $installFile = Join-Path $choco_folder 'tools' | Join-Path -ChildPath 'chocolateyInstall.ps1'
@@ -414,29 +429,28 @@ if ($Configure) {
     }
 
     # Publish Chocolatey NuGet
-    if (!(Get-LatestNuGetPackage -FeedURL $choco_repository_url -PackageName $CONFIG.choco.package_name)) {
+    $choco_url = Get-ProGetFeedUrl $session (Get-ProGetFeed $session $CONFIG.proget.feeds.chocolatey.name)
+    if (!(Find-Package -Source $choco_url -Name $CONFIG.choco.package_name -ErrorAction SilentlyContinue)) {
         $choco_nuget_path = Join-Path $local_file_folder $CONFIG.choco.file_name
         $choco_args = @(
             $choco_nuget_path,
             '-source',
-            $choco_repository_url,
+            $choco_url,
             '-api-key',
             $ApiKey
         )
         Start-Process 'cpush.exe' -ArgumentList $choco_args -PassThru -NoNewWindow -Wait | Out-Null
     }
 
-    # Check for assets feed
-    try {
-        Invoke-Api -Type 'Get' -Endpoint ($assets_endpoint + $CONFIG.proget.feeds.bootstrap.name) -ApiKey $ApiKey
-    }
-    catch {
-        try {
-            Invoke-ProGetApi -Type 'Post' -ApiKey $ApiKey -Endpoint $feeds_create_endpoint -Data $CONFIG.proget.feeds.bootstrap
-        }
-        catch {
-            Write-Error "Failed creating Chocolatey feed: $($Error[0])"
-            exit
+    # Upload assets
+    $CONFIG.assets | ForEach-Object {
+        if (!(Get-ProGetAsset $session $CONFIG.proget.feeds.bootstrap.name $_.name -ErrorAction SilentlyContinue)) {
+            New-ProGetAsset `
+                -Session $session `
+                -FeedName $CONFIG.proget.feeds.bootstrap.name `
+                -Path $_.name `
+                -ContentType $_.type `
+                -InFile (Join-Path $local_file_folder $_.name)
         }
     }
 }
