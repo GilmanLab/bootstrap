@@ -214,6 +214,29 @@ function Get-Sql {
     Compress-Archive -Path (Join-Path $SqlPath '*') -DestinationPath (Join-Path $Path $SqlFileName)
 }
 
+function Get-PoshProget {
+    param(
+        [Parameter(
+            Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 1
+        )]
+        [string]  $Name,
+        [Parameter(
+            Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 2
+        )]
+        [string]  $Path
+    )
+
+    Save-Module -Name $Name -Path $Path
+    Compress-Archive -Path (Join-Path $Path $Name | Join-Path -ChildPath '*') -DestinationPath (Join-Path $Path ($Name + '.zip'))
+    Remove-Item -Path (Join-Path $Path $Name) -Recurse -Force
+}
+
 # Don't let the script continue with errors
 $ErrorActionPreference = 'Stop'
 
@@ -229,6 +252,7 @@ else {
     New-Item -ItemType Directory -Path $local_path -Force
 }
 
+Get-PoshProget -Name $CONFIG.posh_proget.name -Path $local_path
 Get-Provider -Name $CONFIG.provider.name -FileName $CONFIG.provider.file_name -Version $CONFIG.provider.version -ProviderPath $provider_path -Path $local_path
 Get-NuGet -Url $CONFIG.nuget.url -FileName $CONFIG.nuget.file_name -Path $local_path
 Get-Chocolatey -Url $CONFIG.choco.url -FileName $CONFIG.choco.file_name -Path $local_path
