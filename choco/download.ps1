@@ -233,6 +233,12 @@ function Get-PoshProget {
     )
 
     Save-Module -Name $Name -Path $Path
+
+    # Save-Module saves to a versioned sub-folder - rename this to the module
+    # name to make it easier to import later
+    $sub_folder = Get-Item (Join-Path $Path $Name) | Select-Object -First 1 | Join-Path -ChildPath '*'
+    $sub_folder | Move-Item -Destination (Join-Path $Path $Name | Join-Path -ChildPath $Name)
+
     Compress-Archive -Path (Join-Path $Path $Name | Join-Path -ChildPath '*') -DestinationPath (Join-Path $Path ($Name + '.zip'))
     Remove-Item -Path (Join-Path $Path $Name) -Recurse -Force
 }
