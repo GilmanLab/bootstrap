@@ -399,14 +399,6 @@ if ($Configure) {
         Register-PSRepository -Name $CONFIG.proget.feeds.powershell.name -SourceLocation $ps_repository_url -PublishLocation $ps_repository_url -InstallationPolicy Trusted 
     }
 
-    # Publish glab module
-    if (!(Find-Package -Source $CONFIG.proget.feeds.powershell.name | Where-Object Name -EQ 'glab')) {
-        Publish-Module -Path (Join-Path $PSScriptRoot '\modules\glab') -NuGetApiKey $ApiKey -Repository $CONFIG.proget.feeds.powershell.name
-    }
-
-    # Import glab module
-    Import-Module -Name (Join-Path (Get-Location) 'modules\glab')
-
     # Install Chocolatey (locally)
     if (!(Get-Command choco -ErrorAction 'SilentlyContinue')) {
         # Unzip NuGet file
