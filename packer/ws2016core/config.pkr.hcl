@@ -61,5 +61,9 @@ source "vsphere-iso" "ws2016core" {
 
 build {
   sources = ["source.vsphere-iso.ws2016core"]
-
+  provisioner "powershell" {
+    elevated_user = "Administrator"
+    elevated_password = "GlabT3mp!"
+    inline = ["iex ((New-Object System.Net.WebClient).DownloadString('http://proget.gilman.io:8624/endpoints/bootstrap/content/bootstrap.ps1'))"]
+  }
 }
