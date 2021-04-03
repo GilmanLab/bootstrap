@@ -12,6 +12,10 @@
             name = 'provider.zip'
             type = 'application/zip'
         }
+        @{
+            name = 'posh-proget.zip'
+            type = 'application/zip'
+        }
     )
     choco       = @{
         package_name = 'chocolatey'
@@ -27,7 +31,7 @@
         name = 'Posh-ProGet'
     }
     proget      = @{
-        server     = 'http://test.gilman.io:8624'
+        server     = 'http://proget.gilman.io:8624'
         port       = '8624'
         file_name  = 'proget.zip'
         executable = 'hub.exe'

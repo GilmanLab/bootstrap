@@ -426,20 +426,27 @@ if ($Configure) {
         # Run install file
         $installFile = Join-Path $choco_folder 'tools' | Join-Path -ChildPath 'chocolateyInstall.ps1'
         Start-Process 'powershell.exe' -ArgumentList $installFile -PassThru -NoNewWindow -Wait | Out-Null
+
+        # Modify path
+        if (!('C:\ProgramData\chocolatey\bin' -in ($env:PATH -split ';'))) {
+            $env:PATH = $env:PATH + ';C:\ProgramData\chocolatey\bin'
+        }
     }
 
     # Publish Chocolatey NuGet
     $choco_url = Get-ProGetFeedUrl $session (Get-ProGetFeed $session $CONFIG.proget.feeds.chocolatey.name)
     if (!(Find-Package -Source $choco_url -Name $CONFIG.choco.package_name -ErrorAction SilentlyContinue)) {
+        Write-Host 'In here!'
         $choco_nuget_path = Join-Path $local_file_folder $CONFIG.choco.file_name
         $choco_args = @(
             $choco_nuget_path,
             '-source',
             $choco_url,
             '-api-key',
-            $ApiKey
+            $ApiKey,
+            '-force'
         )
-        Start-Process 'cpush.exe' -ArgumentList $choco_args -PassThru -NoNewWindow -Wait | Out-Null
+        Start-Process 'cpush.exe' -ArgumentList $choco_args -PassThru -NoNewWindow -Wait
     }
 
     # Upload assets
