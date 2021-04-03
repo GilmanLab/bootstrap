@@ -35,6 +35,7 @@ source "vsphere-iso" "ws2016core" {
   firmware = "efi"
 
   guest_os_type = "windows9Server64Guest"
+  usb_controller = ["xhci"]
 
   disk_controller_type = ["lsilogic-sas"]
   storage {
