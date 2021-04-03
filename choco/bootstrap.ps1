@@ -43,16 +43,6 @@ $PROVIDER_PATH = "$env:ProgramFiles\PackageManagement\ProviderAssemblies"
 $NUGET_PATH = "$env:ProgramData\Microsoft\Windows\PowerShell\PowerShellGet"
 $MIN_EXECUTION_POLICY = 'RemoteSigned'
 
-# Check the execution policy is configured appropriately
-if ((Get-ExecutionPolicy) -ne $MIN_EXECUTION_POLICY) {
-    Write-Error ("The current execution policy of '$(Get-ExecutionPolicy)' " +
-        "does not match the required minimum policy of '$MIN_EXECUTION_POLICY'. " +
-        'Please run the following command as an administrator to update the ' + 
-        'execution policy:')
-    Write-Error "Set-ExecutionPolicy -ExecutionPolicy $MIN_EXECUTION_POLICY"
-    Exit
-}
-
 # Ensure temp folder is present
 if (!(Test-Path $env:TEMP)) {
     Write-Verbose "Creating temporary folder at $env:TEMP..."
