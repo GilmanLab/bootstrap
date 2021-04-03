@@ -1,24 +1,12 @@
 <#
 .Synopsis
-   Bootstraps an offline machine with Chocolatey
+   Bootstraps a machine with Chocolatey
 .DESCRIPTION
-   This script is intended to be run by an offline machine deployed within glab
-   and will perform the necessary steps to download and install Chocolatey to
-   the machine for package management. This script expects infrastructure to
-   already be in place, including:
-     * A SMB share configured at $CONFIG.mount.address with a $CONFIG.mount.share share
-     * A copy of the NuGet provider uploaded to {MOUNT}\$CONFIG.provider.file_name
-     * A copy of the NuGet binary uploaded to {MOUNT}\$CONFIG.nuget.file_name
-     * A ProGet server running at $CONFIG.proget.server
-     * A Powershell feed configured at $CONFIG.proget.feeds.posh
-       * The feed must have the "glab" module uploaded to it
-     * A Chocolatey feed configured at $CONFIG.proget.feeds.choco
-       * The feed must have the Chocolatey NuGet package uploaded to it
-    This script will automatically download the NuGet provider and executable
-    as needed and then download and install the Chocolatey NuGet package from
-    the provided ProGet server.
-    This script is intended to be uploaded to a web server and then executed
-    much like the default Chocolatey install script. See the example below.
+   This script is intended to be run by a  machine deployed within glab and will
+   automatically provision it with Chocolatey. The script expects an already
+   configured ProGet server to be available for downloading the required assets.
+   This script is intended to be downloaded and ran in a single command: see the
+   example below for more details.
 .EXAMPLE
    iex ((New-Object System.Net.WebClient).DownloadString('https://myserver.com/bootstrap.ps1'))
 .NOTES
