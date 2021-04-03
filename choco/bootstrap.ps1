@@ -41,7 +41,6 @@ $CONFIG = @{
 
 $PROVIDER_PATH = "$env:ProgramFiles\PackageManagement\ProviderAssemblies"
 $NUGET_PATH = "$env:ProgramData\Microsoft\Windows\PowerShell\PowerShellGet"
-$MIN_EXECUTION_POLICY = 'RemoteSigned'
 
 # Ensure temp folder is present
 if (!(Test-Path $env:TEMP)) {
