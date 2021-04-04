@@ -67,8 +67,9 @@ build {
     elevated_password = "GlabT3mp!"
     inline = ["iex ((New-Object System.Net.WebClient).DownloadString('http://proget.gilman.io:8624/endpoints/bootstrap/content/bootstrap.ps1'))"]
   }
-  #provisioner "windows-update" {
-  #}
+  provisioner "windows-update" {
+    
+  }
   provisioner "powershell" {
     elevated_user = "Administrator"
     elevated_password = "GlabT3mp!"
