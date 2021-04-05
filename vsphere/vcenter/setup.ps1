@@ -197,7 +197,7 @@ foreach ($vmhost in Get-VMHost) {
 if (!(Get-Datastore | Where-Object Name -EQ $CONFIG.vcenter.iscsi.name)) {
     $iscsi_host = Get-VMHost | Where-Object Name -EQ $CONFIG.vcenter.iscsi.host
     $device = $iscsi_host | Get-ScsiLun | Where-Object Model -EQ 'iSCSI Storage'
-    $iscsi_host | New-Datastore -Name $CONFIG.vcenter.iscsi.name -Path ($device | Select-Object -ExpandProperty CanonicalName)
+    $iscsi_host | New-Datastore -Name $CONFIG.vcenter.iscsi.name -Path ($device | Select-Object -ExpandProperty CanonicalName) -Vmfs
 }
 
 # Create cluster
