@@ -155,7 +155,7 @@ function Get-Bootstrap {
         [string]  $Path
     )
     # Copy the bootstrap script to the path
-    Copy-Item (Join-Path $PSScriptRoot 'bootstrap.ps1') $Path
+    Copy-Item (Join-Path $PSScriptRoot '..\choco\bootstrap.ps1') $Path
 }
 
 function Get-ProGet {
