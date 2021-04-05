@@ -28,7 +28,8 @@
         path      = 'Microsoft\Windows\PowerShell\PowerShellGet'
     }
     posh_proget = @{
-        name = 'Posh-ProGet'
+        url       = 'https://github.com/jmgilman/posh-proget/archive/refs/heads/main.zip'
+        file_name = 'posh-proget.zip'
     }
     proget      = @{
         server     = 'http://proget.gilman.io:8624'

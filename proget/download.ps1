@@ -222,25 +222,24 @@ function Get-PoshProget {
             ValueFromPipelineByPropertyName = $true,
             Position = 1
         )]
-        [string]  $Name,
+        [string]  $Url,
         [Parameter(
             Mandatory = $true,
             ValueFromPipeline = $true,
             ValueFromPipelineByPropertyName = $true,
             Position = 2
         )]
-        [string]  $Path
+        [string]  $Path,
+        [Parameter(
+            Mandatory = $true,
+            ValueFromPipeline = $true,
+            ValueFromPipelineByPropertyName = $true,
+            Position = 3
+        )]
+        [string]  $FileName
     )
 
-    Save-Module -Name $Name -Path $Path
-
-    # Save-Module saves to a versioned sub-folder - rename this to the module
-    # name to make it easier to import later
-    $sub_folder = Get-Item (Join-Path $Path $Name) | Select-Object -First 1 | Join-Path -ChildPath '*'
-    $sub_folder | Move-Item -Destination (Join-Path $Path $Name | Join-Path -ChildPath $Name)
-
-    Compress-Archive -Path (Join-Path $Path $Name | Join-Path -ChildPath '*') -DestinationPath (Join-Path $Path ($Name + '.zip'))
-    Remove-Item -Path (Join-Path $Path $Name) -Recurse -Force
+    Invoke-WebRequest -Uri $Url -OutFile (Join-Path $Path $FileName)
 }
 
 # Don't let the script continue with errors
@@ -258,7 +257,7 @@ else {
     New-Item -ItemType Directory -Path $local_path -Force
 }
 
-Get-PoshProget -Name $CONFIG.posh_proget.name -Path $local_path
+Get-PoshProget -Url $CONFIG.posh_proget.url -Path $local_path -FileName $CONFIG.posh_proget.file_name
 Get-Provider -Name $CONFIG.provider.name -FileName $CONFIG.provider.file_name -Version $CONFIG.provider.version -ProviderPath $provider_path -Path $local_path
 Get-NuGet -Url $CONFIG.nuget.url -FileName $CONFIG.nuget.file_name -Path $local_path
 Get-Chocolatey -Url $CONFIG.choco.url -FileName $CONFIG.choco.file_name -Path $local_path
