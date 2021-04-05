@@ -30,6 +30,7 @@
     posh_proget = @{
         url       = 'https://github.com/jmgilman/posh-proget/archive/refs/heads/main.zip'
         file_name = 'posh-proget.zip'
+        name      = 'Posh-Proget'
     }
     proget      = @{
         server     = 'http://proget.gilman.io:8624'

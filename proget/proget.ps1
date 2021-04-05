@@ -362,9 +362,9 @@ if ($Configure) {
     }
 
     # Import Posh-Proget module
-    $posh_proget_path = Join-Path $local_file_folder ($CONFIG.posh_proget.name + '.zip')
+    $posh_proget_path = Join-Path $local_file_folder $CONFIG.posh_proget.file_name
     Expand-Archive $posh_proget_path $local_file_folder -Force
-    Import-Module (Join-Path $local_file_folder $CONFIG.posh_proget.name)
+    Import-Module (Join-Path $local_file_folder 'posh-proget-main\Posh-Proget')
 
     # Check for existing feeds
     $session = New-ProGetSession $CONFIG.proget.server $ApiKey
@@ -411,7 +411,7 @@ if ($Configure) {
 
     # Publish Posh-ProGet module
     if (!(Find-Module -Name $CONFIG.posh_proget.name -Repository $CONFIG.proget.feeds.powershell.name -ErrorAction SilentlyContinue)) {
-        Publish-Module -Path (Join-Path $local_file_folder $CONFIG.posh_proget.name) -NuGetApiKey $ApiKey -Repository $CONFIG.proget.feeds.powershell.name 
+        Publish-Module -Path (Join-Path $local_file_folder 'posh-proget-main\Posh-Proget') -NuGetApiKey $ApiKey -Repository $CONFIG.proget.feeds.powershell.name 
     }
 
     # Install Chocolatey (locally)
@@ -436,7 +436,6 @@ if ($Configure) {
     # Publish Chocolatey NuGet
     $choco_url = Get-ProGetFeedUrl $session (Get-ProGetFeed $session $CONFIG.proget.feeds.chocolatey.name)
     if (!(Find-Package -Source $choco_url -Name $CONFIG.choco.package_name -ErrorAction SilentlyContinue)) {
-        Write-Host 'In here!'
         $choco_nuget_path = Join-Path $local_file_folder $CONFIG.choco.file_name
         $choco_args = @(
             $choco_nuget_path,
