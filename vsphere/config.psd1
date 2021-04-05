@@ -32,7 +32,7 @@
             @{
                 name    = 'Lab'
                 address = 'nas.gilman.io'
-                path    = '/volume1/Lab'
+                path    = '/volume2/Lab'
             }
         )
         iscsi      = @{
