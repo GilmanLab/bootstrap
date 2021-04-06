@@ -1,0 +1,15 @@
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - packer/ws2016core/*
+
+pool:
+  name: default
+
+steps:
+- script: packer build -force -var "vsphere_password=$(vsphere.password)" config.pkr.hcl
+  workingDirectory: $(Build.SourcesDirectory)/packer/ws2016core
+  displayName: 'Build Windows Server 2016 Core packer image'
