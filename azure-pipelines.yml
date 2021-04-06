@@ -5,10 +5,6 @@ pool:
   name: default
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- script: packer build config.pkr.hcl -var "vsphere_password=${env:VSPHERE_PASSWORD}"
+  workingDirectory: $(Pipeline.Workspace)\packer\ws2016core
+  displayName: 'Build the packer image'
