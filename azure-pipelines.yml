@@ -4,9 +4,6 @@ trigger:
 pool:
   name: default
 
-variables:
-  - name: vsphere_password: 
-
 steps:
 - script: packer build -var "vsphere_password=$(vsphere.password)" config.pkr.hcl
   workingDirectory: $(Pipeline.Workspace)\s\packer\ws2016core
