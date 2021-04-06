@@ -48,10 +48,11 @@ if (!(Test-Path $env:TEMP)) {
     New-Item -Type Directory -Path $env:TEMP -Force | Out-Null
 }
 
+# Import Posh-Proget module
 $url = '{0}/endpoints/{1}/content/{2}' -f ($CONFIG.proget.server, $CONFIG.assets.feed_name, $CONFIG.assets.posh_proget)
 Invoke-WebRequest -Uri $url -OutFile (Join-Path $env:TEMP $CONFIG.assets.posh_proget)
 Expand-Archive (Join-Path $env:TEMP $CONFIG.assets.posh_proget) $env:TEMP -Force
-Import-Module (Join-Path $env:TEMP 'Posh-Proget')
+Import-Module (Join-Path $env:TEMP 'posh-proget-main\Posh-Proget')
 
 $session = New-ProGetSession $CONFIG.proget.server ''
 $full_provider_path = Join-Path $PROVIDER_PATH "nuget\$($CONFIG.provider.min_version)"
