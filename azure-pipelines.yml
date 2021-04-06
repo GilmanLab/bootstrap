@@ -6,5 +6,5 @@ pool:
 
 steps:
 - script: packer build config.pkr.hcl -var "vsphere_password=${env:VSPHERE_PASSWORD}"
-  workingDirectory: $(Pipeline.Workspace)\packer\ws2016core
+  workingDirectory: $(Pipeline.Workspace)\s\packer\ws2016core
   displayName: 'Build the packer image'
